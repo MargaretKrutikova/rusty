@@ -48,7 +48,7 @@ struct CompetitionResult {
     table: HashMap<String, TeamStats>,
 }
 
-impl<'a> CompetitionResult {
+impl CompetitionResult {
     pub fn new() -> Self {
         CompetitionResult {
             table: HashMap::new(),
