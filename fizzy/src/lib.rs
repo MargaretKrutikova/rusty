@@ -4,14 +4,14 @@ use std::ops::{Add, Rem};
 /// A Matcher is a single rule of fizzbuzz: given a function on T, should
 /// a word be substituted in? If yes, which word?
 pub struct Matcher<T> {
-    run_fn: Box<dyn Fn(T) -> bool>,
+    match_fn: fn(T) -> bool,
     substitute: &'static str,
 }
 
 impl<T> Matcher<T> {
-    pub fn new(matcher: impl Fn(T) -> bool + 'static, substitute: &'static str) -> Matcher<T> {
+    pub fn new(match_fn: fn(T) -> bool, substitute: &'static str) -> Matcher<T> {
         Matcher {
-            run_fn: Box::new(matcher),
+            match_fn,
             substitute,
         }
     }
@@ -24,12 +24,23 @@ pub struct Fizzy<T> {
 
 impl<T> Fizzy<T>
 where
-    T: Display + Add<Output = T> + Rem<Output = T> + From<u8> + PartialEq + Copy,
+    T: 'static + Display + Add<Output = T> + Rem<Output = T> + From<u8> + PartialEq + Copy,
 {
     pub fn is_divisible_by(element: &T, number: u8) -> bool {
         let result = *element % number.into();
         result == 0.into()
     }
+    fn run_matchers(matchers: &Vec<Matcher<T>>, element: T) -> Option<String> {
+        matchers.iter().fold(None, |acc, matcher| {
+            match (acc, (matcher.match_fn)(element)) {
+                (Some(acc_val), true) => Some(format!("{}{}", acc_val, matcher.substitute)),
+                (Some(acc_val), false) => Some(acc_val),
+                (None, true) => Some(String::from(matcher.substitute)),
+                (None, false) => None,
+            }
+        })
+    }
+
     pub fn new() -> Self {
         Fizzy {
             matchers: Vec::new(),
@@ -47,20 +58,11 @@ where
     where
         I: Iterator<Item = T>,
     {
-        iter.map(|n| {
-            let result = self
-                .matchers
-                .iter()
-                .map(|matcher| match (matcher.run_fn)(n) {
-                    true => matcher.substitute,
-                    false => "",
-                })
-                .collect::<Vec<&'static str>>()
-                .join(" ");
-            match result.is_empty() {
-                true => n.to_string(),
-                false => result,
-            }
+        let matchers = self.matchers;
+
+        iter.map(move |n| match Fizzy::run_matchers(&matchers, n) {
+            None => n.to_string(),
+            Some(val) => val,
         })
     }
 }
@@ -68,7 +70,7 @@ where
 /// convenience function: return a Fizzy which applies the standard fizz-buzz rules
 pub fn fizz_buzz<T>() -> Fizzy<T>
 where
-    T: Display + Add<Output = T> + Rem<Output = T> + From<u8> + PartialEq + Copy,
+    T: 'static + Display + Add<Output = T> + Rem<Output = T> + From<u8> + PartialEq + Copy,
 {
     Fizzy::new()
         .add_matcher(Matcher::new(|n| Fizzy::is_divisible_by(&n, 3), "fizz"))
