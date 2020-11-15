@@ -64,28 +64,42 @@ const NUMBERS: [&str; 10]= [
     "   ")
 ];
 
-fn to_number(s: &String) -> String {
-    let maybe_position = NUMBERS.iter().position(|r| r == s);
+fn to_number(s: &str) -> String {
+    let maybe_position = NUMBERS.iter().position(|number_str| *number_str == s);
     match maybe_position {
         Some(position) => position.to_string(),
         None => String::from("?"),
     }
 }
-fn transform_input(input: &str) -> String {
-    let rows = input.split("\n").collect::<Vec<_>>();
-    let number_of_letters = rows[0].len() / COLS;
+
+fn extract_letter_by_ind(row: &[&str], letter_ind: usize) -> String {
+    let start_position = letter_ind * COLS;
+    row.iter()
+        .map(|cols| &cols[start_position..start_position + COLS])
+        .collect::<Vec<&str>>()
+        .join("\n")
+}
+
+fn transform_row(row: &[&str]) -> String {
+    let number_of_letters = row[0].len() / COLS;
 
     (0..number_of_letters)
         .map(|index| {
-            let letter = rows
-                .iter()
-                .map(|cols| &cols[index * COLS..index * COLS + COLS])
-                .collect::<Vec<&str>>()
-                .join("\n");
+            let letter = extract_letter_by_ind(row, index);
             to_number(&letter)
         })
         .collect::<Vec<_>>()
         .join("")
+}
+
+fn transform_input(input: &str) -> String {
+    let rows = input.split("\n").collect::<Vec<_>>();
+    let number_of_rows = rows.len() / ROWS;
+
+    (0..number_of_rows)
+        .map(|index| transform_row(&rows[index * ROWS..index * ROWS + ROWS]))
+        .collect::<Vec<_>>()
+        .join(",")
 }
 
 fn validate_rows(input: &str) -> Option<Error> {

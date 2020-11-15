@@ -176,7 +176,6 @@ fn recognizes_string_of_decimal_numbers() {
 }
 
 #[test]
-#[ignore]
 #[rustfmt::skip]
 fn numbers_across_multiple_lines_are_joined_by_commas() {
     let input = "    _  _ \n".to_string() +
