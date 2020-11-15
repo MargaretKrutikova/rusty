@@ -10,51 +10,62 @@ pub enum Error {
 const ROWS: usize = 4;
 const COLS: usize = 3;
 
+#[rustfmt::skip]
+const NUMBERS: [&str; 10]= [
+    concat!(
+    " _ \n",
+    "| |\n",
+    "|_|\n",
+    "   "),
+    concat!(
+    "   \n",
+    "  |\n",
+    "  |\n",
+    "   "),
+    concat!(
+    " _ \n",
+    " _|\n" ,
+    "|_ \n" ,
+    "   "),
+    concat!(
+    " _ \n",
+    " _|\n",
+    " _|\n",
+    "   "),
+    concat!(
+    "   \n",
+    "|_|\n",
+    "  |\n",
+    "   "),
+    concat!(
+    " _ \n",
+    "|_ \n",
+    " _|\n",
+    "   "),
+    concat!(
+    " _ \n",
+    "|_ \n",
+    "|_|\n",
+    "   "),
+    concat!(
+    " _ \n",
+    "  |\n",
+    "  |\n",
+    "   "),
+    concat!(
+    " _ \n",
+    "|_|\n",
+    "|_|\n",
+    "   "),
+    concat!(
+    " _ \n",
+    "|_|\n" ,
+    " _|\n",
+    "   ")
+];
+
 fn to_number(s: &String) -> String {
-    #[rustfmt::skip]
-    let numbers = [
-        " _ \n".to_string() +
-        "| |\n" +
-        "|_|\n" +
-        "   ",
-        "   \n".to_string() +
-        "  |\n" +
-        "  |\n" +
-        "   ",
-        " _ \n".to_string() +
-        " _|\n" +
-        "|_ \n" +
-        "   ",
-        " _ \n".to_string() +
-        " _|\n" +
-        " _|\n" +
-        "   ",
-        "   \n".to_string() +
-        "|_|\n" +
-        "  |\n" +
-        "   ",
-        " _ \n".to_string() +
-        "|_ \n" +
-        " _|\n" +
-        "   ",
-        " _ \n".to_string() +
-        "|_ \n" +
-        "|_|\n" +
-        "   ",
-        " _ \n".to_string() +
-        "  |\n" +
-        "  |\n" +
-        "   ",
-        " _ \n".to_string() +
-        "|_|\n" +
-        "|_|\n" +
-        "   ",
-        " _ \n".to_string() +
-        "|_|\n" +
-        " _|\n" +
-        "   "
-    ];
-    let maybe_position = numbers.iter().position(|r| r == s);
+    let maybe_position = NUMBERS.iter().position(|r| r == s);
     match maybe_position {
         Some(position) => position.to_string(),
         None => String::from("?"),
