@@ -22,7 +22,6 @@ fn input_with_columns_not_multiple_of_three_is_error() {
 }
 
 #[test]
-#[ignore]
 #[rustfmt::skip]
 fn unrecognized_characters_return_question_mark() {
     let input = "   \n".to_string() +
@@ -34,7 +33,6 @@ fn unrecognized_characters_return_question_mark() {
 }
 
 #[test]
-#[ignore]
 #[rustfmt::skip]
 fn recognizes_0() {
     let input = " _ \n".to_string() +
@@ -46,7 +44,6 @@ fn recognizes_0() {
 }
 
 #[test]
-#[ignore]
 #[rustfmt::skip]
 fn recognizes_1() {
     let input = "   \n".to_string() +
@@ -58,7 +55,6 @@ fn recognizes_1() {
 }
 
 #[test]
-#[ignore]
 #[rustfmt::skip]
 fn recognizes_2() {
     let input = " _ \n".to_string() +
@@ -70,7 +66,6 @@ fn recognizes_2() {
 }
 
 #[test]
-#[ignore]
 #[rustfmt::skip]
 fn recognizes_3() {
     let input = " _ \n".to_string() +
@@ -82,7 +77,6 @@ fn recognizes_3() {
 }
 
 #[test]
-#[ignore]
 #[rustfmt::skip]
 fn recognizes_4() {
     let input = "   \n".to_string() +
@@ -94,7 +88,6 @@ fn recognizes_4() {
 }
 
 #[test]
-#[ignore]
 #[rustfmt::skip]
 fn recognizes_5() {
     let input = " _ \n".to_string() +
@@ -106,7 +99,6 @@ fn recognizes_5() {
 }
 
 #[test]
-#[ignore]
 #[rustfmt::skip]
 fn recognizes_6() {
     let input = " _ \n".to_string() +
@@ -118,7 +110,6 @@ fn recognizes_6() {
 }
 
 #[test]
-#[ignore]
 #[rustfmt::skip]
 fn recognizes_7() {
     let input = " _ \n".to_string() +
@@ -130,7 +121,6 @@ fn recognizes_7() {
 }
 
 #[test]
-#[ignore]
 #[rustfmt::skip]
 fn recognizes_8() {
     let input = " _ \n".to_string() +
@@ -142,7 +132,6 @@ fn recognizes_8() {
 }
 
 #[test]
-#[ignore]
 #[rustfmt::skip]
 fn recognizes_9() {
     let input = " _ \n".to_string() +
@@ -154,7 +143,6 @@ fn recognizes_9() {
 }
 
 #[test]
-#[ignore]
 #[rustfmt::skip]
 fn recognizes_110101100() {
     let input = "       _     _        _  _ \n".to_string() +
@@ -166,7 +154,6 @@ fn recognizes_110101100() {
 }
 
 #[test]
-#[ignore]
 #[rustfmt::skip]
 fn replaces_only_garbled_numbers_with_question_mark() {
     let input = "       _     _           _ \n".to_string() +
@@ -178,7 +165,6 @@ fn replaces_only_garbled_numbers_with_question_mark() {
 }
 
 #[test]
-#[ignore]
 #[rustfmt::skip]
 fn recognizes_string_of_decimal_numbers() {
     let input = "    _  _     _  _  _  _  _  _ \n".to_string() +

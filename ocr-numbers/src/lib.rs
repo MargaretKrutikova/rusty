@@ -71,23 +71,18 @@ fn to_number(s: &String) -> String {
         None => String::from("?"),
     }
 }
-
 fn transform_input(input: &str) -> String {
-    let rows = input
-        .split("\n")
-        .map(|row| row.split("\n").collect::<Vec<_>>())
-        .collect::<Vec<_>>();
-    let number_of_letters = rows[0].len();
-    println!("{}", number_of_letters);
+    let rows = input.split("\n").collect::<Vec<_>>();
+    let number_of_letters = rows[0].len() / COLS;
 
     (0..number_of_letters)
         .map(|index| {
-            let f = rows
+            let letter = rows
                 .iter()
-                .map(|cols| cols[index])
-                .collect::<Vec<_>>()
+                .map(|cols| &cols[index * COLS..index * COLS + COLS])
+                .collect::<Vec<&str>>()
                 .join("\n");
-            to_number(&f)
+            to_number(&letter)
         })
         .collect::<Vec<_>>()
         .join("")
