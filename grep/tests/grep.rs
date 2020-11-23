@@ -468,6 +468,16 @@ set_up_test_case!(
 
 set_up_test_case!(
     #[test]
+    test_multiple_files_one_match_match_entire_lines_and_print_file_names_flags(
+        pattern = "But I beseech your grace that I may know",
+        flags = ["-x", "-l"],
+        files = ["iliad.txt", "midsummer_night.txt", "paradise_lost.txt"],
+        prefix_expected = ["midsummer_night.txt"]
+    )
+);
+
+set_up_test_case!(
+    #[test]
     test_multiple_files_one_match_multiple_flags(
         pattern = "WITH LOSS OF EDEN, TILL ONE GREATER MAN",
         flags = ["-n", "-i", "-x"],

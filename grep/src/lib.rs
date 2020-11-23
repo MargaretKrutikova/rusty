@@ -6,7 +6,7 @@ enum Flag {
     PrintLineNumber,
     PrintFileNameOnly,
     CaseInsensitive,
-    FailResultOnly,
+    InvertResults,
     MatchEntireLine,
 }
 
@@ -28,33 +28,14 @@ impl Flags {
             "-n" => Some(Flag::PrintLineNumber),
             "-l" => Some(Flag::PrintFileNameOnly),
             "-i" => Some(Flag::CaseInsensitive),
-            "-v" => Some(Flag::FailResultOnly),
+            "-v" => Some(Flag::InvertResults),
             "-x" => Some(Flag::MatchEntireLine),
             _ => None,
         }
     }
 }
 
-struct LineMatch<'a> {
-    file_name: &'a str,
-    line_number: usize,
-    line: &'a str,
-}
-
-fn format_match(flags: &Vec<Flag>, include_file_name: bool, line_match: &LineMatch) -> String {
-    let formatted_line = match flags.contains(&Flag::PrintLineNumber) {
-        true => format!("{}:{}", line_match.line_number, line_match.line),
-        false => String::from(line_match.line),
-    };
-
-    if include_file_name {
-        format!("{}:{}", line_match.file_name, formatted_line)
-    } else {
-        formatted_line
-    }
-}
-
-fn match_line<'a>(flags: &Vec<Flag>, (pattern, line): (&'a str, &'a str)) -> bool {
+fn match_line(pattern: &str, flags: &Vec<Flag>, line: &str) -> bool {
     match flags.contains(&Flag::MatchEntireLine) {
         true if line == pattern => true,
         false if line.contains(pattern) => true,
@@ -63,51 +44,65 @@ fn match_line<'a>(flags: &Vec<Flag>, (pattern, line): (&'a str, &'a str)) -> boo
 }
 
 fn has_match(pattern: &str, flags: &Vec<Flag>, line: &str) -> bool {
-    let (pattern_transformed, line_transformed) = match flags.contains(&Flag::CaseInsensitive) {
-        true => (pattern.to_lowercase(), line.to_lowercase()),
-        false => (String::from(pattern), String::from(line)),
+    let matches_pattern = match flags.contains(&Flag::CaseInsensitive) {
+        true => match_line(&pattern.to_lowercase(), flags, &line.to_lowercase()),
+        false => match_line(pattern, flags, line),
     };
-    let matches_pattern = match_line(flags, (&pattern_transformed, &line_transformed));
-    match flags.contains(&Flag::FailResultOnly) {
+
+    match flags.contains(&Flag::InvertResults) {
         false => matches_pattern,
         true if !line.is_empty() => !matches_pattern,
         _ => false,
     }
 }
 
-fn match_file_content<'a>(
-    pattern: &'a str,
-    flags: &'a Vec<Flag>,
+fn format_match(
+    include_line_number: bool,
     include_file_name: bool,
-    file_name: &'a str,
-    content: &'a str,
-) -> Vec<String> {
-    if flags.contains(&Flag::PrintFileNameOnly) {
-        return match has_match(pattern, flags, content) {
-            true => vec![String::from(file_name)],
-            false => vec![],
-        };
+    file_name: &str,
+    (index, line): (usize, &str),
+) -> String {
+    let formatted_line = match include_line_number {
+        true => format!("{}:{}", index + 1, line),
+        false => String::from(line),
+    };
+    match include_file_name {
+        true => format!("{}:{}", file_name, formatted_line),
+        false => formatted_line,
     }
+}
 
-    content
+fn match_file_content(
+    pattern: &str,
+    flags: &Vec<Flag>,
+    include_file_name: bool,
+    file_name: &str,
+    content: &str,
+) -> Vec<String> {
+    let mut matches = content
         .split("\n")
         .enumerate()
-        .filter(|(_, line)| has_match(pattern, flags, line))
-        .map(|(index, line)| {
-            let line_match = LineMatch {
-                line,
-                file_name,
-                line_number: index + 1,
-            };
-            format_match(flags, include_file_name, &line_match)
-        })
-        .filter(|result| !result.is_empty())
-        .collect::<Vec<_>>()
+        .filter(|(_, line)| has_match(pattern, flags, line));
+
+    match flags.contains(&Flag::PrintFileNameOnly) {
+        true => match matches.next() {
+            Some(_) => vec![String::from(file_name)],
+            None => vec![],
+        },
+        false => {
+            let include_line_number = flags.contains(&Flag::PrintLineNumber);
+            matches
+                .map(|pair| format_match(include_line_number, include_file_name, file_name, pair))
+                .filter(|result| !result.is_empty())
+                .collect::<Vec<_>>()
+        }
+    }
 }
 
 pub fn grep(pattern: &str, flags: &Flags, files: &[&str]) -> Result<Vec<String>, Error> {
     let mut matching_lines: Vec<String> = Vec::new();
     let include_file_name = files.len() > 1;
+
     for file_name in files.iter() {
         let content = fs::read_to_string(file_name)?;
         let matches =
