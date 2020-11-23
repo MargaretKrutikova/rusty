@@ -1,65 +1,119 @@
 use anyhow::Error;
 use std::fs;
 
-/// While using `&[&str]` to handle flags is convenient for exercise purposes,
-/// and resembles the output of [`std::env::args`], in real-world projects it is
-/// both more convenient and more idiomatic to contain runtime configuration in
-/// a dedicated struct. Therefore, we suggest that you do so in this exercise.
-///
-/// In the real world, it's common to use crates such as [`clap`] or
-/// [`structopt`] to handle argument parsing, and of course doing so is
-/// permitted in this exercise as well, though it may be somewhat overkill.
-///
-/// [`clap`]: https://crates.io/crates/clap
-/// [`std::env::args`]: https://doc.rust-lang.org/std/env/fn.args.html
-/// [`structopt`]: https://crates.io/crates/structopt
+#[derive(Debug, PartialEq)]
+enum Flag {
+    PrintLineNumber,
+    PrintFileNameOnly,
+    CaseInsensitive,
+    FailResultOnly,
+    MatchEntireLine,
+}
+
 #[derive(Debug)]
 pub struct Flags {
-    case_insensitive: bool,
-    print_line_numbers: bool,
+    list: Vec<Flag>,
 }
 
 impl Flags {
     pub fn new(flags: &[&str]) -> Self {
-        Flags {
-            case_insensitive: flags.iter().any(|flag| *flag == "-i"),
-            print_line_numbers: flags.iter().any(|flag| *flag == "-n"),
+        let list = flags
+            .iter()
+            .filter_map(|flag| Flags::parse_flag(flag))
+            .collect();
+        Flags { list }
+    }
+    fn parse_flag(flag: &str) -> Option<Flag> {
+        match flag {
+            "-n" => Some(Flag::PrintLineNumber),
+            "-l" => Some(Flag::PrintFileNameOnly),
+            "-i" => Some(Flag::CaseInsensitive),
+            "-v" => Some(Flag::FailResultOnly),
+            "-x" => Some(Flag::MatchEntireLine),
+            _ => None,
         }
     }
 }
 
-fn contains(pattern: &str, flags: &Flags, line: &str) -> bool {
-    if flags.case_insensitive {
-        let p = pattern.to_lowercase();
-        line.to_lowercase().contains(&p)
+struct LineMatch<'a> {
+    file_name: &'a str,
+    line_number: usize,
+    line: &'a str,
+}
+
+fn format_match(flags: &Vec<Flag>, include_file_name: bool, line_match: &LineMatch) -> String {
+    let formatted_line = match flags.contains(&Flag::PrintLineNumber) {
+        true => format!("{}:{}", line_match.line_number, line_match.line),
+        false => String::from(line_match.line),
+    };
+
+    if include_file_name {
+        format!("{}:{}", line_match.file_name, formatted_line)
     } else {
-        line.contains(pattern)
+        formatted_line
     }
 }
 
-fn display_line(flags: &Flags, (index, line): (usize, &str)) -> String {
-    if flags.print_line_numbers {
-        format!("{}:{}", index + 1, line)
-    } else {
-        String::from(line)
+fn match_line<'a>(flags: &Vec<Flag>, (pattern, line): (&'a str, &'a str)) -> bool {
+    match flags.contains(&Flag::MatchEntireLine) {
+        true if line == pattern => true,
+        false if line.contains(pattern) => true,
+        _ => false,
     }
 }
 
-fn grep_file(pattern: &str, flags: &Flags, file: &str) -> Result<Vec<String>, Error> {
-    let matches = fs::read_to_string(file)?
+fn has_match(pattern: &str, flags: &Vec<Flag>, line: &str) -> bool {
+    let (pattern_transformed, line_transformed) = match flags.contains(&Flag::CaseInsensitive) {
+        true => (pattern.to_lowercase(), line.to_lowercase()),
+        false => (String::from(pattern), String::from(line)),
+    };
+    let matches_pattern = match_line(flags, (&pattern_transformed, &line_transformed));
+    match flags.contains(&Flag::FailResultOnly) {
+        false => matches_pattern,
+        true if !line.is_empty() => !matches_pattern,
+        _ => false,
+    }
+}
+
+fn match_file_content<'a>(
+    pattern: &'a str,
+    flags: &'a Vec<Flag>,
+    include_file_name: bool,
+    file_name: &'a str,
+    content: &'a str,
+) -> Vec<String> {
+    if flags.contains(&Flag::PrintFileNameOnly) {
+        return match has_match(pattern, flags, content) {
+            true => vec![String::from(file_name)],
+            false => vec![],
+        };
+    }
+
+    content
         .split("\n")
         .enumerate()
-        .filter(|(_, line)| contains(pattern, flags, line))
-        .map(|pair| display_line(flags, pair))
-        .collect::<Vec<String>>();
-
-    Ok(matches)
+        .filter(|(_, line)| has_match(pattern, flags, line))
+        .map(|(index, line)| {
+            let line_match = LineMatch {
+                line,
+                file_name,
+                line_number: index + 1,
+            };
+            format_match(flags, include_file_name, &line_match)
+        })
+        .filter(|result| !result.is_empty())
+        .collect::<Vec<_>>()
 }
 
 pub fn grep(pattern: &str, flags: &Flags, files: &[&str]) -> Result<Vec<String>, Error> {
     let mut matching_lines: Vec<String> = Vec::new();
-    for file in files.iter() {
-        matching_lines.extend(grep_file(pattern, flags, file)?);
+    let include_file_name = files.len() > 1;
+    for file_name in files.iter() {
+        let content = fs::read_to_string(file_name)?;
+        let matches =
+            match_file_content(pattern, &flags.list, include_file_name, file_name, &content);
+
+        matching_lines.extend(matches);
     }
     Ok(matching_lines)
 }
